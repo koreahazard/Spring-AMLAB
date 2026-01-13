@@ -1,6 +1,9 @@
 package com.amlab.spring_amlab.account.controller;
 
+import com.amlab.spring_amlab.account.controller.requestForm.LoginUserRequestForm;
 import com.amlab.spring_amlab.account.controller.requestForm.RegisterUserRequestForm;
+import com.amlab.spring_amlab.account.service.request.LoginUserRequest;
+import com.amlab.spring_amlab.account.service.response.LoginUserResponse;
 import com.amlab.spring_amlab.common.ResponseForm;
 import com.amlab.spring_amlab.account.service.UserService;
 import com.amlab.spring_amlab.account.service.request.CreateUserRequest;
@@ -44,12 +47,34 @@ public class UserController {
                 .body(
                         ResponseForm.success(
                                 HttpStatus.OK,
-                                "회원가입 성공",
+                                "회원 가입 성공",
                                 null
                         )
                 );
 
     }
+
+    @PostMapping("/login")
+    public ResponseEntity<ResponseForm<Object>> login(
+            @RequestBody LoginUserRequestForm form
+    ) {
+        LoginUserRequest request = form.toLoginUserRequest();
+        LoginUserResponse response = userService.loginUser(request);
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(
+                        ResponseForm.success(
+                                HttpStatus.OK,
+                                "로그인 성공",
+                                response
+                        )
+                );
+
+
+    }
+
+
 
 
 }

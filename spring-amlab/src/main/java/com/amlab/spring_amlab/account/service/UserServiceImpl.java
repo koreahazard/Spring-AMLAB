@@ -1,10 +1,16 @@
 package com.amlab.spring_amlab.account.service;
 
 import com.amlab.spring_amlab.account.entity.User;
+import com.amlab.spring_amlab.account.exception.InvalidPasswordException;
+import com.amlab.spring_amlab.account.exception.UserNameNotFoundException;
 import com.amlab.spring_amlab.account.repository.UserRepository;
 import com.amlab.spring_amlab.account.service.request.CreateUserRequest;
+import com.amlab.spring_amlab.account.service.request.LoginUserRequest;
 import com.amlab.spring_amlab.account.service.response.CreateUserResponse;
+import com.amlab.spring_amlab.account.service.response.LoginUserResponse;
+import com.amlab.spring_amlab.config.JwtProvider;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +29,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;  // 비밀번호 해시화 도구
+    private final JwtProvider jwtProvider;
 
     @Override
     @Transactional
@@ -66,5 +73,30 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
 
         return new CreateUserResponse(true, List.of());
+    }
+
+    @Override
+    @Transactional
+    public LoginUserResponse loginUser(LoginUserRequest request) {
+        //유저 조회
+        User user = userRepository.findByUsername(request.getUsername())
+                .orElseThrow(()->new UserNameNotFoundException("존재하지 않는 사용자입니다."));
+        // 2. 비밀번호 검증
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new InvalidPasswordException("비밀번호가 일치하지 않습니다.");
+        }
+
+        // 3. JWT 생성
+        String accessToken = jwtProvider.createToken(user.getId());
+
+        // 4. 응답 반환
+        return new LoginUserResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getNickname(),
+                accessToken
+        );
+
+
     }
 }
