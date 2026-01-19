@@ -2,8 +2,10 @@ package com.amlab.spring_amlab.account.controller;
 
 import com.amlab.spring_amlab.account.controller.requestForm.LoginUserRequestForm;
 import com.amlab.spring_amlab.account.controller.requestForm.RegisterUserRequestForm;
+import com.amlab.spring_amlab.account.entity.User;
 import com.amlab.spring_amlab.account.service.request.LoginUserRequest;
 import com.amlab.spring_amlab.account.service.response.LoginUserResponse;
+import com.amlab.spring_amlab.account.service.response.MyInfoResponse;
 import com.amlab.spring_amlab.common.ResponseForm;
 import com.amlab.spring_amlab.account.service.UserService;
 import com.amlab.spring_amlab.account.service.request.CreateUserRequest;
@@ -11,13 +13,12 @@ import com.amlab.spring_amlab.account.service.response.CreateUserResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/main")
+@RequestMapping("/account")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -73,6 +74,43 @@ public class UserController {
 
 
     }
+
+    @GetMapping("/myinfo")
+    public ResponseEntity<ResponseForm<Object>> myInfo() {
+
+        Authentication authentication =
+                SecurityContextHolder.getContext().getAuthentication();
+
+        if (authentication == null || !authentication.isAuthenticated()
+                || authentication.getPrincipal().equals("anonymousUser")) {
+
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(
+                            ResponseForm.fail(
+                                    HttpStatus.UNAUTHORIZED,
+                                    "인증이 필요합니다.",
+                                    null
+                            )
+                    );
+        }
+
+        User user = (User) authentication.getPrincipal();
+
+        MyInfoResponse response = new MyInfoResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getNickname()
+        );
+
+        return ResponseEntity.ok(
+                ResponseForm.success(
+                        HttpStatus.OK,
+                        "내 정보 조회 성공",
+                        response
+                )
+        );
+    }
+
 
 
 
